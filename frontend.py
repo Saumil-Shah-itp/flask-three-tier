@@ -7,7 +7,7 @@ app = Flask(__name__)
 BACKEND_API = "http://<replace-with-private-instance-backend-ip>:5000"  # Update this with Load Balancer later
 
 # ✅ Dummy data for fallback
-tasks = [{"id": 1, "name": "Dummy Task 1"}, {"id": 2, "name": "Dummy Task 2"}]
+tasks = [{"id": 1, "name": "Frontend Dummy Task 1"}, {"id": 2, "name": "Frontend Dummy Task 2"}]
 
 
 @app.route("/", methods=["GET", "POST"])
