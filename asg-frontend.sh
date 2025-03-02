@@ -3,4 +3,4 @@ yum update -y
 yum install -y python3 python3-pip git
 pip3 install flask flask-cors mysql-connector-python requests pymsql
 cd /home/ec2-user/flaskapp/frontend/
-python3 /home/ec2-user/flaskapp/frontend/app.py
+python3 /home/ec2-user/flaskapp/frontend/frontend.py
