@@ -1,0 +1,468 @@
+Description: This template deploys a VPC, with two public and six private
+  subnets spread across two Availability Zones. It deploys an internet gateway,
+  with a default route on the public subnets. It deploys a pair of NAT gateways
+  (one in each AZ), and default routes for them in the private subnets. It also
+  deploys required security groups.
+
+Parameters:
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+    Default: 10.0.0.0/16
+
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in
+      the first Availability Zone
+    Type: String
+    Default: 10.0.0.0/24
+
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in
+      the second Availability Zone
+    Type: String
+    Default: 10.0.1.0/24
+
+  PrivateWebTierSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private web tier
+      subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.2.0/24
+
+  PrivateWebTierSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private web tier
+      subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.3.0/24
+
+  PrivateAppTierSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private app tier
+      subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.4.0/24
+
+  PrivateAppTierSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private app tier
+      subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.5.0/24
+
+  ProtectedDatabaseSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the protected
+      database subnet in the first Availability Zone
+    Type: String
+    Default: 10.0.6.0/24
+
+  ProtectedDatabaseSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the protected
+      database subnet in the second Availability Zone
+    Type: String
+    Default: 10.0.7.0/24
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref PublicSubnet1CIDR
+      Tags:
+        - Key: Name
+          Value: !Sub PublicSubnetAZ1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      CidrBlock: !Ref PublicSubnet2CIDR
+      Tags:
+        - Key: Name
+          Value: !Sub PublicSubnetAZ2
+
+  PrivateWebTierSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref PrivateWebTierSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub PrivateWebTierSubnetAZ1
+
+  PrivateWebTierSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      CidrBlock: !Ref PrivateWebTierSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub PrivateWebTierSubnetAZ2
+
+  PrivateAppTierSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref PrivateAppTierSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub PrivateAppTierSubnetAZ1
+
+  PrivateAppTierSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      CidrBlock: !Ref PrivateAppTierSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub PrivateAppTierSubnetAZ2
+
+  ProtectedDatabaseSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref ProtectedDatabaseSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ProtectedDatabaseSubnetAZ1
+
+  ProtectedDatabaseSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      CidrBlock: !Ref ProtectedDatabaseSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub ProtectedDatabaseSubnetAZ2
+
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PublicRouteTable
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PrivateWebTierRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PrivateWebTierRouteAZ1
+
+  DefaultPrivateWebTierRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateWebTierRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateWebTierSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateWebTierRouteTable1
+      SubnetId: !Ref PrivateWebTierSubnet1
+
+  PrivateWebTierRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub PrivateWebTierRouteAZ2
+
+  DefaultPrivateWebTierRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateWebTierRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+
+  PrivateWebTierSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateWebTierRouteTable2
+      SubnetId: !Ref PrivateWebTierSubnet2
+
+  PrivateAppTierRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PrivateAppTierRouteAZ1
+
+  DefaultPrivateAppTierRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateAppTierRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateAppTierSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateAppTierRouteTable1
+      SubnetId: !Ref PrivateAppTierSubnet1
+
+  PrivateAppTierRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: PrivateAppTierRouteAZ2
+
+  DefaultPrivateAppTierRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateAppTierRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+
+  PrivateAppTierSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateAppTierRouteTable2
+      SubnetId: !Ref PrivateAppTierSubnet2
+
+  ProtectedDatabaseRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: ProtectedDatabaseRouteAZ1
+
+  ProtectedDatabaseSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ProtectedDatabaseRouteTable1
+      SubnetId: !Ref ProtectedDatabaseSubnet1
+
+  ProtectedDatabaseRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: ProtectedDatabaseRouteAZ2
+
+  ProtectedDatabaseSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref ProtectedDatabaseRouteTable2
+      SubnetId: !Ref ProtectedDatabaseSubnet2
+
+  WebTierSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Web Tier Security Group with port 80 open to all
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: Allow HTTP port 80 from all IP addresses
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: '-1'
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: web-tier-sg
+
+  AppTierSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: App Tier Security Group with port 5000 open to VPC CIDR
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: Allow port 5000 from VPC CIDR
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: !Ref VpcCIDR
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: '-1'
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: app-tier-sg
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DB Tier Security Group with port 3306 open to VPC CIDR
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: Allow MySQL port 3306 from VPC CIDR
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !Ref VpcCIDR
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: '-1'
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: db-tier-sg  
+
+Outputs:
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VPC"
+  PublicSubnet1:
+    Description: A reference to the created PublicSubnet1
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet1"
+  PublicSubnet2:
+    Description: A reference to the created PublicSubnet2
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet2"
+  PrivateWebTierSubnet1:
+    Description: A reference to the created PrivateWebTierSubnet1
+    Value: !Ref PrivateWebTierSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateWebTierSubnet1"
+  PrivateWebTierSubnet2:
+    Description: A reference to the created PrivateWebTierSubnet2
+    Value: !Ref PrivateWebTierSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateWebTierSubnet2"
+  PrivateAppTierSubnet1:
+    Description: A reference to the created PrivateAppTierSubnet1
+    Value: !Ref PrivateAppTierSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateAppTierSubnet1"
+  PrivateAppTierSubnet2:
+    Description: A reference to the created PrivateAppTierSubnet2
+    Value: !Ref PrivateAppTierSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateAppTierSubnet2"
+  ProtectedDatabaseSubnet1:
+    Description: A reference to the created ProtectedDatabaseSubnet1
+    Value: !Ref ProtectedDatabaseSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-ProtectedDatabaseSubnet1"
+  ProtectedDatabaseSubnet2:
+    Description: A reference to the created ProtectedDatabaseSubnet2
+    Value: !Ref ProtectedDatabaseSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-ProtectedDatabaseSubnet2"
+  WebTierSecurityGroup:
+    Description: A reference to the created WebTierSecurityGroup
+    Value: !GetAtt WebTierSecurityGroup.GroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-WebTierSecurityGroup"
+  AppTierSecurityGroup:
+    Description: A reference to the created AppTierSecurityGroup
+    Value: !GetAtt AppTierSecurityGroup.GroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-AppTierSecurityGroup"
+  DatabaseSecurityGroup:
+    Description: A reference to the created DatabaseSecurityGroup
+    Value: !GetAtt DatabaseSecurityGroup.GroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-DatabaseSecurityGroup"
