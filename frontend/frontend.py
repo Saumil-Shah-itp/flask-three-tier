@@ -9,6 +9,13 @@ BACKEND_API = "http://<replace-with-private-instance-backend-ip>:5000"  # Update
 # ✅ Dummy data for fallback
 tasks = [{"id": 1, "name": "Frontend Dummy Task 1"}, {"id": 2, "name": "Frontend Dummy Task 2"}]
 
+# ✅ Function to Get EC2 Instance ID
+def get_instance_id():
+    try:
+        response = requests.get("http://169.254.169.254/latest/meta-data/instance-id", timeout=1)
+        return response.text
+    except requests.exceptions.RequestException:
+        return "Unknown-Instance"
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -31,8 +38,7 @@ def index():
     except requests.exceptions.RequestException as e:
         print(f"⚠ Backend API failed: {e}")
 
-    return render_template("index.html", tasks=tasks)
-
+    return render_template("index.html", tasks=tasks, instance_id=get_instance_id())
 
 @app.route("/delete/<int:task_id>")
 def delete_task(task_id):
@@ -43,7 +49,6 @@ def delete_task(task_id):
         tasks = [task for task in tasks if task["id"] != task_id]
 
     return redirect(url_for("index"))
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=80, debug=True)
