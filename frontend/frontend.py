@@ -11,9 +11,6 @@ tasks = [{"id": 1, "name": "Frontend Dummy Task 1"}, {"id": 2, "name": "Frontend
 
 # ✅ Function to Get EC2 Instance ID
 def get_instance_id():
-import requests
-
-def get_instance_id():
     try:
         # Get the IMDSv2 token
         token_url = "http://169.254.169.254/latest/api/token"
