@@ -11,11 +11,30 @@ tasks = [{"id": 1, "name": "Frontend Dummy Task 1"}, {"id": 2, "name": "Frontend
 
 # ✅ Function to Get EC2 Instance ID
 def get_instance_id():
+import requests
+
+def get_instance_id():
     try:
-        response = requests.get("http://169.254.169.254/latest/meta-data/instance-id", timeout=1)
+        # Get the IMDSv2 token
+        token_url = "http://169.254.169.254/latest/api/token"
+        headers = {"X-aws-ec2-metadata-token-ttl-seconds": "21600"}
+        token_response = requests.put(token_url, headers=headers, timeout=1)
+        token_response.raise_for_status()
+        token = token_response.text
+
+        # Use the token to fetch the instance ID
+        metadata_url = "http://169.254.169.254/latest/meta-data/instance-id"
+        headers = {"X-aws-ec2-metadata-token": token}
+        response = requests.get(metadata_url, headers=headers, timeout=1)
+        response.raise_for_status()
+
         return response.text
     except requests.exceptions.RequestException:
         return "Unknown-Instance"
+
+# Example usage
+print(get_instance_id())
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
