@@ -33,7 +33,6 @@ def get_instance_id():
         return "Unknown-Instance"
 
 # Example usage
-print(get_instance_id())
 
 
 @app.route("/", methods=["GET", "POST"])
